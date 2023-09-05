@@ -2,6 +2,7 @@ import {
     getIsFetchingProducts,
     getIsLoading,
     getProducts,
+    Product,
 } from 'features/products/products_slice';
 
 import { useSelector } from 'react-redux';
@@ -15,8 +16,8 @@ import {
 } from '@mui/x-data-grid';
 import { Box, IconButton, LinearProgress, Skeleton } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
 import { useAppDispatch } from 'store';
-
 import MuiPagination from '@mui/material/Pagination';
 import { TablePaginationProps } from '@mui/material/TablePagination';
 import styled from '@emotion/styled';
@@ -24,6 +25,8 @@ import { deleteProducts } from 'features/products/products_table/delete_products
 import Stack from '@mui/material/Stack';
 import StyledDataGrid from 'components/styled_data_grid';
 import Loader from 'components/loader';
+import { openEditProductModal } from 'features/products/edit_product_modal/edit_product_modal_slice';
+
 export const columns: GridColDef[] = [
     {
         field: 'id',
@@ -50,6 +53,14 @@ export const columns: GridColDef[] = [
     {
         field: 'title',
         headerName: 'Title',
+        flex: 4,
+        sortable: false,
+        filterable: false,
+        disableColumnMenu: true,
+    },
+    {
+        field: 'brand',
+        headerName: 'Brand',
         flex: 4,
         sortable: false,
         filterable: false,
@@ -136,6 +147,15 @@ const CustomPagination: FC = (props: any) => {
 
         dispatch(deleteProducts(rowIds));
     };
+
+    const handleEditClick = () => {
+        dispatch(
+            openEditProductModal(
+                Array.from(selectedRows.values())[0] as Product,
+            ),
+        );
+    };
+
     return (
         <PaginationContainer>
             <SelectedRows>
@@ -146,6 +166,11 @@ const CustomPagination: FC = (props: any) => {
                             <DeleteIcon />
                         </IconButton>
                     </>
+                )}
+                {selectedRows.size === 1 && (
+                    <IconButton onClick={handleEditClick}>
+                        <EditIcon />
+                    </IconButton>
                 )}
             </SelectedRows>
             <GridPagination ActionsComponent={Pagination} {...props} />{' '}
@@ -177,7 +202,12 @@ const ProductsTable: FC = () => {
                             },
                         }}
                         slots={{
-                            footer: CustomPagination,
+                            footer: () => {
+                                if (products.length) {
+                                    return <CustomPagination />;
+                                }
+                                return null;
+                            },
                             noRowsOverlay: () => (
                                 <Stack
                                     sx={{
@@ -186,7 +216,7 @@ const ProductsTable: FC = () => {
                                         justifyContent: 'center',
                                     }}
                                 >
-                                    List is empty
+                                    No results
                                 </Stack>
                             ),
                             loadingOverlay: LinearProgress,
@@ -228,7 +258,7 @@ const SelectedRows = styled(Box)`
 `;
 
 const GridContainer = styled.div<{ noRows: boolean }>`
-    height: ${props => (props.noRows ? '100vh' : '100%')};
+    height: 100%;
 `;
 
 const ThumbnailImg = styled.img`

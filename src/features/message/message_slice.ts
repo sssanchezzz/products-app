@@ -3,7 +3,7 @@ import {
     createAction,
     createSlice,
 } from '@reduxjs/toolkit';
-import { createProduct } from 'features/products/add_product_modal/create_product_form/create_product_slice';
+import { createProduct } from 'features/products/create_product_modal/create_product';
 
 export type Product = {
     id: number;

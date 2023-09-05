@@ -11,6 +11,7 @@ import {
     sortProducts,
 } from 'features/header/sort/sort_products';
 import { useAppDispatch } from 'store';
+import styled from '@emotion/styled';
 
 export const SORTING_TYPES: SortingTypes[] = [
     SortingTypes.ASC,
@@ -31,9 +32,10 @@ SORTING_CATEGORIES.forEach(category => {
 
 const Filter: React.FC<React.HTMLAttributes<HTMLDivElement>> = props => {
     const dispatch = useAppDispatch();
-    const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+    const [anchorElement, setAnchorElement] =
+        React.useState<null | HTMLElement>(null);
     const [selectedIndex, setSelectedIndex] = React.useState(0);
-    const open = Boolean(anchorEl);
+    const open = Boolean(anchorElement);
 
     React.useEffect(() => {
         dispatch(
@@ -45,7 +47,7 @@ const Filter: React.FC<React.HTMLAttributes<HTMLDivElement>> = props => {
     }, [dispatch, selectedIndex]);
 
     const handleClickListItem = (event: React.MouseEvent<HTMLElement>) => {
-        setAnchorEl(event.currentTarget);
+        setAnchorElement(event.currentTarget);
     };
 
     const handleSortingCategoryClick = (
@@ -53,11 +55,11 @@ const Filter: React.FC<React.HTMLAttributes<HTMLDivElement>> = props => {
         index: number,
     ) => {
         setSelectedIndex(index);
-        setAnchorEl(null);
+        setAnchorElement(null);
     };
 
     const handleClose = () => {
-        setAnchorEl(null);
+        setAnchorElement(null);
     };
 
     return (
@@ -67,13 +69,9 @@ const Filter: React.FC<React.HTMLAttributes<HTMLDivElement>> = props => {
                     categories[selectedIndex][0] === 'id' ? null : categories[
                           selectedIndex
                       ][1] === SortingTypes.DESC ? (
-                        <ArrowDownwardIcon
-                            sx={{ width: '20px', height: '20px' }}
-                        />
+                        <ButtonArrowDownwardIcon />
                     ) : (
-                        <ArrowUpwardIcon
-                            sx={{ width: '20px', height: '20px' }}
-                        />
+                        <ButtonArrowUpwardIcon />
                     )
                 }
                 variant="outlined"
@@ -81,15 +79,16 @@ const Filter: React.FC<React.HTMLAttributes<HTMLDivElement>> = props => {
                 aria-expanded={open ? 'true' : undefined}
                 onClick={handleClickListItem}
             >
-                Sort by{' '}
-                {categories[selectedIndex][0] === 'id'
-                    ? 'default'
-                    : categories[selectedIndex][0]}
+                {`Sort by ${
+                    categories[selectedIndex][0] === 'id'
+                        ? 'default'
+                        : categories[selectedIndex][0]
+                }`}
             </Button>
 
             <Menu
                 id="lock-menu"
-                anchorEl={anchorEl}
+                anchorEl={anchorElement}
                 open={open}
                 onClose={handleClose}
                 MenuListProps={{
@@ -105,18 +104,14 @@ const Filter: React.FC<React.HTMLAttributes<HTMLDivElement>> = props => {
                             handleSortingCategoryClick(event, index)
                         }
                     >
-                        <span style={{ paddingRight: '10px' }}>
+                        <StyledSpan>
                             {option[0] === 'id' ? 'default' : option[0]}
-                        </span>
+                        </StyledSpan>
                         {option[0] === 'id' ? null : categories[index][1] ===
                           SortingTypes.DESC ? (
-                            <ArrowDownwardIcon
-                                sx={{ width: '15px', height: '15px' }}
-                            />
+                            <StyledArrowDownwardIcon />
                         ) : (
-                            <ArrowUpwardIcon
-                                sx={{ width: '15px', height: '15px' }}
-                            />
+                            <StyledArrowUpwardIcon />
                         )}
                     </MenuItem>
                 ))}
@@ -124,5 +119,29 @@ const Filter: React.FC<React.HTMLAttributes<HTMLDivElement>> = props => {
         </div>
     );
 };
+
+const StyledSpan = styled.span`
+    padding-right: 10px;
+`;
+
+const ButtonArrowDownwardIcon = styled(ArrowDownwardIcon)`
+    width: 20px;
+    height: 20px;
+`;
+
+const ButtonArrowUpwardIcon = styled(ArrowUpwardIcon)`
+    width: 20px;
+    height: 20px;
+`;
+
+const StyledArrowDownwardIcon = styled(ArrowDownwardIcon)`
+    width: 15px;
+    height: 15px;
+`;
+
+const StyledArrowUpwardIcon = styled(ArrowUpwardIcon)`
+    width: 15px;
+    height: 15px;
+`;
 
 export default Filter;

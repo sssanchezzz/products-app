@@ -1,3 +1,4 @@
+import { RootState } from 'store';
 import {
     ActionReducerMapBuilder,
     createAsyncThunk,
@@ -7,11 +8,12 @@ import axios from 'axios';
 import { deleteProductsReducer } from 'features/products/products_table/delete_products';
 import { searchProductsReducer } from 'features/header/search_field/search_products';
 import { API_URLs } from 'utils/API';
-import { createProductReducer } from 'features/products/add_product_modal/create_product_form/create_product_slice';
+import { createProductReducer } from 'features/products/create_product_modal/create_product';
 import { sortProductsReducer } from 'features/header/sort/sort_products';
-import { filterProductsReducer } from 'features/filter_products_drawer/filter_products';
+import { filterProducts } from 'features/filter_products_drawer/filter_products_slice';
+import { editProductReducer } from 'features/products/edit_product_modal/edit_product';
 
-type NullableNumberTuple = [number | null, number | null];
+type NumberTuple = [number, number];
 
 export type Product = {
     id: number;
@@ -29,38 +31,47 @@ export type Product = {
 export type ProductsState = {
     isLoading: boolean;
     products: Product[];
-    totalProducts: number;
-    priceRange: NullableNumberTuple;
+    _products: Product[];
+    lastId: number;
+    priceRange: NumberTuple | null;
     productBrands: string[];
     isFetching: boolean;
+    totalProducts: number;
 };
 
 export const productsState: ProductsState = {
     isLoading: false,
+    _products: [],
     products: [],
-    totalProducts: 0,
-    priceRange: [null, null],
+    lastId: 0,
+    priceRange: null,
     productBrands: [],
     isFetching: false,
+    totalProducts: 0,
 };
 
 export const getIsLoading = (state: any): boolean =>
     state.getProducts.isLoading;
 
-export const getIsFetchingProducts = (state: any): boolean =>
+export const getIsFetchingProducts = (state: RootState): boolean =>
     state.getProducts.isFetching;
 
-export const getProducts = (state: any): Product[] =>
+export const getProducts = (state: RootState): Product[] =>
     state.getProducts.products;
 
-export const getTotalProducts = (state: any): number =>
-    state.getProducts.totalProducts;
+export const getFetchedProducts = (state: RootState): Product[] =>
+    state.getProducts._products;
 
-export const getPriceRange = (state: any): [number, number] =>
+export const getLastId = (state: RootState): number => state.getProducts.lastId;
+
+export const getPriceRange = (state: RootState): NumberTuple | null =>
     state.getProducts.priceRange;
 
-export const getProductBrands = (state: any): string[] =>
+export const getProductBrands = (state: RootState): string[] =>
     state.getProducts.productBrands;
+
+export const getTotalProducts = (state: RootState): number =>
+    state.getProducts.totalProducts;
 
 export const fetchProducts = createAsyncThunk('products', async () => {
     const response = await axios.get(
@@ -85,14 +96,30 @@ const fetchProductsReducer = (
             return {
                 isLoading: false,
                 products: action.payload.products,
-                totalProducts: action.payload.total,
+                _products: action.payload.products,
+                lastId: action.payload.total,
                 priceRange: findPriceRange(action.payload.products),
                 productBrands: findProductBrands(action.payload.products),
                 isFetching: false,
+                totalProducts: action.payload.total,
             };
         })
         .addCase(fetchProducts.rejected, (state, action) => {
             return productsState;
+        })
+        .addCase(filterProducts.pending, (state, action) => {
+            return {
+                ...state,
+                isLoading: true,
+            };
+        })
+
+        .addCase(filterProducts.rejected, (state, action) => {
+            return {
+                ...state,
+                isLoading: false,
+                products: state._products,
+            };
         });
 };
 
@@ -105,21 +132,20 @@ export const getProductsSlice = createSlice({
         deleteProductsReducer(builder);
         searchProductsReducer(builder);
         createProductReducer(builder);
+        editProductReducer(builder);
         sortProductsReducer(builder);
-        filterProductsReducer(builder);
     },
 });
 
-const findPriceRange = (products: Product[]): NullableNumberTuple => {
-    return findMinMax(products.map(product => product.price));
-};
+const findPriceRange = (products: Product[]): NumberTuple | null =>
+    findMinMax(products.map(product => product.price));
 
-const findMinMax = (array: number[]): NullableNumberTuple => {
+const findMinMax = (array: number[]): NumberTuple | null => {
     if (array.length === 0) {
-        return [null, null];
+        return null;
     }
 
-    return array.reduce<[number, number]>(
+    return array.reduce<NumberTuple>(
         (acc, currentValue) => {
             const [min, max] = acc;
             return [Math.min(min, currentValue), Math.max(max, currentValue)];

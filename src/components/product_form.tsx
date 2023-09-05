@@ -1,5 +1,5 @@
-import React from 'react';
-import { useFormik } from 'formik';
+import React, { FC } from 'react';
+import { FormikHelpers, useFormik } from 'formik';
 import * as yup from 'yup';
 import {
     TextField,
@@ -12,30 +12,24 @@ import {
 import { useSelector } from 'react-redux';
 import styled from '@emotion/styled';
 import { getProductCategories } from 'features/products/categories/categories_slice.';
-import { useAppDispatch } from 'store';
-import { createProduct } from 'features/products/add_product_modal/create_product_form/create_product_slice';
 import { camelize } from 'utils/camelize';
+import { Product } from 'features/products/products_slice';
 
-const initialProduct = {
-    id: 0,
-    title: '',
-    description: '',
-    price: 0,
-    thumbnail: '',
-    images: [],
-    rating: 0,
-    stock: 0,
-    category: '',
+export type ProductFormProps = {
+    onSubmit: (
+        values: Product,
+        formikHelpers: FormikHelpers<Product>,
+    ) => void | Promise<any>;
+    initialValues: Product;
 };
 
-const CreateProductForm = () => {
-    const dispatch = useAppDispatch();
-
+const ProductForm: FC<ProductFormProps> = ({ onSubmit, initialValues }) => {
     const categories = useSelector(getProductCategories);
 
     const validationSchema = yup.object({
         title: yup.string().required('Product name is required'),
         description: yup.string().required('Description is required'),
+        brand: yup.string().required('Brand is required'),
         price: yup.number().min(0).required('Price is required'),
         stock: yup.number().min(0).required('Stock is required'),
         category: yup
@@ -45,11 +39,9 @@ const CreateProductForm = () => {
     });
 
     const formik = useFormik({
-        initialValues: initialProduct,
+        initialValues: initialValues,
         validationSchema: validationSchema,
-        onSubmit: values => {
-            dispatch(createProduct(values));
-        },
+        onSubmit: onSubmit,
     });
 
     return (
@@ -66,6 +58,18 @@ const CreateProductForm = () => {
                     onBlur={formik.handleBlur}
                     error={formik.touched.title && Boolean(formik.errors.title)}
                     helperText={formik.touched.title && formik.errors.title}
+                />
+                <TextField
+                    fullWidth
+                    id="brand"
+                    name="brand"
+                    label="Brand"
+                    type="brand"
+                    value={formik.values.brand}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={formik.touched.brand && Boolean(formik.errors.brand)}
+                    helperText={formik.touched.brand && formik.errors.brand}
                 />
                 <TextField
                     fullWidth
@@ -150,4 +154,4 @@ const Form = styled.form`
     }
 `;
 
-export default CreateProductForm;
+export default ProductForm;

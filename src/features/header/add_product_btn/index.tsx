@@ -1,13 +1,13 @@
 import { ButtonProps } from '@mui/material';
 import StyledButton from 'components/styled_button';
-import { openAddProductModal } from 'features/products/add_product_modal/add_product_modal_slice';
+import { openCreateProductModal } from 'features/products/create_product_modal/create_product_modal_slice';
 import React, { FC } from 'react';
 import { useAppDispatch } from 'store';
 
 const AddProductBtn: FC<ButtonProps> = props => {
     const dispatch = useAppDispatch();
     const handleAddProductClick = () => {
-        dispatch(openAddProductModal());
+        dispatch(openCreateProductModal());
     };
     return (
         <StyledButton

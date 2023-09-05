@@ -33,9 +33,13 @@ import { useAppDispatch } from 'store';
 import { camelize } from 'utils/camelize';
 import {
     filterProducts,
-    filterProductsByBrands,
-    filterProductsByPriceRange,
-} from 'features/filter_products_drawer/filter_products';
+    getFilterBrands,
+    getFilterCategory,
+    getFilterPriceRange,
+    setBrands,
+    setCategory,
+    setPriceRange,
+} from 'features/filter_products_drawer/filter_products_slice';
 
 const NumberInput: FC<OutlinedInputProps> = ({
     value,
@@ -70,31 +74,31 @@ const FilterProducts: FC = () => {
     const dispatch = useAppDispatch();
 
     const priceRange = useSelector(getPriceRange);
-    const selectedCategories = useSelector(getProductCategories);
     const brands = useSelector(getProductBrands);
+    const productCategories = useSelector(getProductCategories);
     const isDrawerOpen = useSelector(getIsFilterProductsDrawerOpen);
 
-    const categories: string[] = ['All', ...selectedCategories];
-
-    const [category, setCategory] = useState(categories[0]);
-    const [checkedBrands, setCheckedBrands] = useState<string[] | never>([]);
-    const [filterRange, setFilterRange] = useState(priceRange);
+    const categories: string[] = ['All', ...productCategories];
+    const selectedBrands = useSelector(getFilterBrands);
+    const selectedCategory = useSelector(getFilterCategory);
+    const selectedPriceRange = useSelector(getFilterPriceRange);
 
     const [areBrandsCollapsed, setAreBrandsCollapsed] = useState(false);
-
     const handleCloseDrawerClick = () => {
         dispatch(dismissFilterProductsDrawer());
     };
 
     const handleCategoryChange = (e: SelectChangeEvent<string>) => {
-        setCategory(e.target.value);
+        dispatch(setCategory(e.target.value));
     };
 
     const handleBrandsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.checked) {
-            setCheckedBrands([...checkedBrands, e.target.name]);
+            dispatch(setBrands([...selectedBrands, e.target.name]));
         } else {
-            setCheckedBrands(checkedBrands.filter(b => b !== e.target.name));
+            dispatch(
+                setBrands(selectedBrands.filter(b => b !== e.target.name)),
+            );
         }
     };
 
@@ -105,26 +109,18 @@ const FilterProducts: FC = () => {
     const handleFromValueChange = (
         e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>,
     ) => {
-        setFilterRange([+e.target.value, filterRange[1]]);
+        dispatch(setPriceRange([+e.target.value, priceRange?.[1] || 0]));
     };
 
     const handleToValueChange = (
         e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>,
     ) => {
-        setFilterRange([filterRange[0], +e.target.value]);
+        dispatch(setPriceRange([priceRange?.[0] || 0, +e.target.value]));
     };
 
     const handleApplyClick = () => {
-        dispatch(
-            filterProducts({
-                category,
-                brands: checkedBrands,
-                priceRange: [
-                    filterRange[0] || priceRange[0],
-                    filterRange[1] || priceRange[1],
-                ],
-            }),
-        );
+        dispatch(filterProducts());
+        dispatch(dismissFilterProductsDrawer());
     };
 
     return (
@@ -135,7 +131,7 @@ const FilterProducts: FC = () => {
                     flexShrink: 0,
                     '& .MuiDrawer-paper': {
                         width: 400,
-                        padding: '15px',
+                        padding: '0 15px',
                     },
                 }}
                 anchor="right"
@@ -157,16 +153,24 @@ const FilterProducts: FC = () => {
                 <FormContainer>
                     <NumberInput
                         label="From"
-                        value={filterRange[0] || priceRange[0]}
+                        value={
+                            selectedPriceRange
+                                ? selectedPriceRange[0]
+                                : priceRange?.[0]
+                        }
                         sx={{ mr: '10px' }}
                         onChange={handleFromValueChange}
-                        inputProps={{ min: priceRange[0] }}
+                        inputProps={{ min: priceRange?.[0] }}
                     />
                     <NumberInput
                         label="To"
-                        value={filterRange[1] || priceRange[1]}
+                        value={
+                            selectedPriceRange
+                                ? selectedPriceRange[1]
+                                : priceRange?.[1]
+                        }
                         onChange={handleToValueChange}
-                        inputProps={{ max: priceRange[1] }}
+                        inputProps={{ max: priceRange?.[1] }}
                     />
                 </FormContainer>
 
@@ -178,7 +182,7 @@ const FilterProducts: FC = () => {
                             labelId="category-filter"
                             id="category"
                             name="category"
-                            value={category}
+                            value={selectedCategory || ''}
                             label="Category"
                             onChange={handleCategoryChange}
                         >
@@ -201,7 +205,7 @@ const FilterProducts: FC = () => {
                         : brands
                               .slice(0, 10)
                               .concat(
-                                  checkedBrands.filter(
+                                  selectedBrands.filter(
                                       b => brands.indexOf(b) > 9,
                                   ),
                               )
@@ -210,7 +214,7 @@ const FilterProducts: FC = () => {
                             key={c}
                             control={
                                 <Checkbox
-                                    checked={checkedBrands.indexOf(c) !== -1}
+                                    checked={selectedBrands.indexOf(c) !== -1}
                                     onChange={handleBrandsChange}
                                     name={c}
                                 />
@@ -232,6 +236,7 @@ const FilterProducts: FC = () => {
         </div>
     );
 };
+
 const FormContainer = styled.div`
     display: flex;
     justify-content: space-between;
